@@ -1,0 +1,42 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Install and Configure Puppet Agent') {
+            steps {
+                // Execute shell script to install and configure Puppet agent on the slave node
+                sh 'ssh <ubuntu>@<65.2.40.200> "sudo apt update && sudo apt install puppet -y"'
+                sh 'ssh <ubuntu>@<65.2.40.200> "sudo sed -i \'s/server = master.puppetlabs.vm/server = <puppet_master_ip>/\' /etc/puppet/puppet.conf"'
+                sh 'ssh <ubuntu>@<65.2.40.200> "sudo systemctl enable puppet && sudo systemctl start puppet"'
+            }
+        }
+        stage('Push Ansible Configuration to Install Docker') {
+            steps {
+                // Execute Ansible playbook to push configuration to test server and install Docker
+                ansiblePlaybook playbook: 'ansible/install_docker.yml', 
+                               inventory: 'ansible/inventory.ini'
+            }
+        }
+        stage('Pull PHP Website and Dockerfile, Build and Deploy PHP Docker Container') {
+            steps {
+                // Pull PHP website and Dockerfile from Git repository
+                git branch: 'main', url: 'https://github.com/laxitsingh2015/Bucketprod.git'
+                
+                // Build and deploy PHP Docker container
+                sh 'docker build -t php_website .'
+                sh 'docker run -d -p 80:80 --name php_container php_website'
+            }
+        }
+    }
+
+    post {
+        failure {
+            // If Job 3 fails, delete the running container on Test Server
+            stage('Delete Running Container on Test Server') {
+                steps {
+                    sh 'ssh <ubuntu>@<65.2.40.200> "docker stop php_container && docker rm php_container"'
+                }
+            }
+        }
+    }
+}
