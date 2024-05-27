@@ -6,11 +6,12 @@ pipeline {
             steps {
                 // Execute shell script to install and configure Puppet agent on the slave node
                 sh '''
-                    ssh -o StrictHostKeyChecking=no <ubuntu>@<3.111.40.248> <<EOF
-                    sudo apt update && sudo apt install puppet -y
-                    sudo sed -i 's/server = master.puppetlabs.vm/server = <13.201.47.118>/' /etc/puppet/puppet.conf
-                    sudo systemctl enable puppet && sudo systemctl start puppet
-                    EOF
+                    ssh -o StrictHostKeyChecking=no <ubuntu>@<3.111.40.248> "
+                    sudo apt update && 
+                    sudo apt install puppet -y && 
+                    sudo sed -i 's/server = master.puppetlabs.vm/server = <13.201.47.118>/' /etc/puppet/puppet.conf && 
+                    sudo systemctl enable puppet && 
+                    sudo systemctl start puppet"
                 '''
             }
         }
@@ -38,11 +39,12 @@ pipeline {
             // If Job 3 fails, delete the running container on Test Server
             script {
                 sh '''
-                    ssh -o StrictHostKeyChecking=no <ubuntu>@<3.111.40.248> <<EOF
-                    docker stop php_container && docker rm php_container
-                    EOF
+                    ssh -o StrictHostKeyChecking=no <ubuntu>@<3.111.40.248> "
+                    docker stop php_container && 
+                    docker rm php_container"
                 '''
             }
         }
     }
 }
+
