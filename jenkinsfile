@@ -5,9 +5,13 @@ pipeline {
         stage('Install and Configure Puppet Agent') {
             steps {
                 // Execute shell script to install and configure Puppet agent on the slave node
-                sh 'ssh <ubuntu>@<3.111.40.248> "sudo apt update && sudo apt install puppet -y"'
-                sh 'ssh <ubuntu>@<3.111.40.248> "sudo sed -i \'s/server = master.puppetlabs.vm/server = <13.201.47.118>/\' /etc/puppet/puppet.conf"'
-                sh 'ssh <ubuntu>@<3.111.40.248> "sudo systemctl enable puppet && sudo systemctl start puppet"'
+                sh '''
+                    ssh -o StrictHostKeyChecking=no <ubuntu>@<3.111.40.248> <<EOF
+                    sudo apt update && sudo apt install puppet -y
+                    sudo sed -i 's/server = master.puppetlabs.vm/server = <13.201.47.118>/' /etc/puppet/puppet.conf
+                    sudo systemctl enable puppet && sudo systemctl start puppet
+                    EOF
+                '''
             }
         }
         stage('Push Ansible Configuration to Install Docker') {
@@ -33,7 +37,11 @@ pipeline {
         failure {
             // If Job 3 fails, delete the running container on Test Server
             script {
-                sh 'ssh <ubuntu>@<3.111.40.248> "docker stop php_container && docker rm php_container"'
+                sh '''
+                    ssh -o StrictHostKeyChecking=no <ubuntu>@<3.111.40.248> <<EOF
+                    docker stop php_container && docker rm php_container
+                    EOF
+                '''
             }
         }
     }
